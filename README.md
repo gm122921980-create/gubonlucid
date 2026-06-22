@@ -448,3 +448,42 @@ You can find out everything you need to know on how to use TanStack Store in the
 - You can learn more about TanStack in the [TanStack documentation](https://tanstack.com).
 - Learn more about integrating AI with Anthropic's Claude API in the [Anthropic API documentation](https://console.anthropic.com/docs).
 - Learn about using Convex for database storage in the [Convex documentation](https://docs.convex.dev/).
+# /etc/nginx/nginx.conf
+# GUBON OS V5 主配置上下文
+
+user nginx;
+worker_processes auto;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    # --------------------------------------------------------
+    # 核心上下文區域：在這裡引入剛才的 Cloudflare 種子設定
+    # --------------------------------------------------------
+    include /etc/nginx/cloudflare/cloudflare_ips.conf;
+
+    # 基礎傳輸優化
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 4096;
+
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+
+    # 日誌格式：這時候 $realip_remote_addr 就會拿到真正的訪客 IP
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+    error_log   /var/log/nginx/error.log warn;
+
+    # 你的虛擬主機設定
+    include /etc/nginx/conf.d/*.conf;
+}
+
